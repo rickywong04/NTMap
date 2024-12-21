@@ -11,7 +11,7 @@ LABELS_PATH = "models/label_classes.npy"
 
 def load_data():
     data = np.load(DATA_NPZ, allow_pickle=True)
-    X = data['X']  # shape: (num_samples, 128, time_frames, 1)
+    X = data['X'] 
     y = data['y']
     classes = data['classes']
     return X, y, classes
@@ -26,7 +26,6 @@ def build_cnn(input_shape, num_classes):
     model.add(layers.BatchNormalization())
     model.add(layers.MaxPooling2D((2,2)))
 
-    # Optionally, you can try more layers or different filter sizes:
     model.add(layers.Conv2D(64, (3,3), activation='relu'))
     model.add(layers.BatchNormalization())
     model.add(layers.MaxPooling2D((2,2)))
@@ -35,50 +34,20 @@ def build_cnn(input_shape, num_classes):
     model.add(layers.BatchNormalization())
     model.add(layers.MaxPooling2D((2,2)))
 
-    # Optionally add another convolutional layer
-    # model.add(layers.Conv2D(256, (3,3), activation='relu'))
-    # model.add(layers.BatchNormalization())
-    # model.add(layers.MaxPooling2D((2,2)))
-
     model.add(layers.Flatten())
 
     # -------------------------------------------------
     # 2) Example: Modify Dense layers
     # -------------------------------------------------
-    model.add(layers.Dense(256, activation='relu'))  # Increased from 128 to 256
+    model.add(layers.Dense(256, activation='relu')) 
     model.add(layers.Dropout(0.3))
-
-    # Optionally add another Dense layer
-    # model.add(layers.Dense(128, activation='relu'))
-    # model.add(layers.Dropout(0.3))
-
     model.add(layers.Dense(num_classes, activation='softmax'))
 
     # -------------------------------------------------
     # 3) Example: Change the optimizer or learning rate
     # -------------------------------------------------
-    # Option A: Keep Adam but lower the learning rate:
-    # opt = optimizers.Adam(learning_rate=1e-4)
 
-    # Option B: Use RMSProp with a custom learning rate:
-    # opt = optimizers.RMSprop(learning_rate=1e-4)
-
-    # Option C: Use SGD with momentum:
-    # opt = optimizers.SGD(learning_rate=1e-2, momentum=0.9)
-
-    # If you do not define one of these, you’ll just use the default from below:
     opt = optimizers.Adam(learning_rate=1e-3)
-
-    # -------------------------------------------------
-    # 4) Example: Change the loss function
-    # -------------------------------------------------
-    # Common for multi-class classification:
-    # "categorical_crossentropy" is typical if y is one-hot encoded
-    # "sparse_categorical_crossentropy" if y is not one-hot encoded
-    # If you want to try a different approach:
-    # loss_fn = 'categorical_crossentropy'
-    # loss_fn = 'kl_divergence'   # Not typical, but possible
-    # loss_fn = 'focal_loss'      # Requires additional libraries
     loss_fn = 'categorical_crossentropy'
 
     model.compile(optimizer=opt, loss=loss_fn, metrics=['accuracy'])
