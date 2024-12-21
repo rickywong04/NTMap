@@ -6,10 +6,6 @@ import tensorflow as tf
 
 from feature_extraction import extract_cqt_frames
 
-# If your model_cnn or parse_jams is in a separate file, you might import differently
-# from model_cnn import build_tabcnn   # if needed for structure, but typically you just load the .h5
-
-# Define some constants you used in training:
 MAX_FRET = 19
 MUTED_IDX = 20  # index for muted
 SAMPLE_RATE = 22050
