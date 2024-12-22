@@ -1,0 +1,1 @@
+echo "# This file ensures the wav directory is tracked" > .gitignore

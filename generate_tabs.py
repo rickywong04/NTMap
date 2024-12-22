@@ -11,7 +11,7 @@ MUTED_IDX = 20  # index for muted
 SAMPLE_RATE = 22050
 HOP_LENGTH = 512
 
-def load_tabcnn_model(model_path: str):
+def load_model(model_path: str):
     """
     Load the trained TabCNN model from disk.
     """
@@ -53,11 +53,11 @@ def print_tablature(pred_frets: np.ndarray):
         print(f"Frame {i}: {string_labels}")
 
 def main():
-    model_path = "tabcnn_model.h5"    
-    audio_path = "audioconvert/CMajor.m4a" 
+    model_path = "model.h5"    
+    audio_path = "audioconvert/gchord.m4a" 
 
     # 1) Load the model
-    model = load_tabcnn_model(model_path)
+    model = load_model(model_path)
     print("Model loaded.")
 
     # 2) Predict
