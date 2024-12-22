@@ -2,8 +2,7 @@
 """
 train.py
 ---------------
-End-to-end script to train the TabCNN model on GuitarSet data,
-utilizing GPU acceleration on Apple Silicon (M1) via tensorflow-metal,
+End-to-end script to train the CNN model on GuitarSet data,
 and splitting data into 80% train, 10% test, 10% validation.
 """
 
@@ -149,7 +148,7 @@ def main():
     print(f"Test Accuracy: {test_acc:.4f}")
 
     # Save model
-    model.save("tabcnn_model.h5")
+    model.save("model.h5")
     print("Model saved as tabcnn_model.h5")
 
 if __name__ == "__main__":

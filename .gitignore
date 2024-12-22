@@ -1,0 +1,6 @@
+# Ignore all files within data/wav and data/jams
+/data/wav/*
+!/data/wav/.gitignore
+
+/data/jams/*
+!/data/jams/.gitignore

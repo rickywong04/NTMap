@@ -1,0 +1,1 @@
+echo "# This file ensures the jams directory is tracked" > .gitignore
