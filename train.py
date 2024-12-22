@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
-"""
-train.py
----------------
-End-to-end script to train the CNN model on GuitarSet data,
-and splitting data into 80% train, 10% test, 10% validation.
-"""
-
 import os
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import ModelCheckpoint
+import pickle
 
 from parse_jams import parse_guitarset_jams
 from feature_extraction import extract_cqt_frames
@@ -47,74 +42,89 @@ def fret_to_onehot(fret: int) -> np.ndarray:
         arr[fret] = 1.0
     return arr
 
-def main():
-    # Paths for .wav and .jams files
-    WAV_DIR = "data/raw/wav"   # .wav files
-    JAMS_DIR = "data/raw/jams" # .jams files
-
-    sr = 22050
-    hop_length = 512
-
-    # We'll gather X, Y across all files
+def preprocess_and_save_data(wav_dir, jams_dir, output_file, sr=22050, hop_length=512):
+    """
+    Preprocess data and save to a file for reuse.
+    """
     all_X = []
     all_Y = []
 
     # Loop over WAV files
-    for fname in os.listdir(WAV_DIR):
-        # We only want files with "_hex_cln.wav" suffix
+    for fname in os.listdir(wav_dir):
         if not fname.endswith("_hex_cln.wav"):
             continue
-        wav_path = os.path.join(WAV_DIR, fname)
+        wav_path = os.path.join(wav_dir, fname)
         
         # Remove "_hex_cln.wav" and replace it with ".jams"
         base = fname.replace("_hex_cln.wav", "")
         jams_file = base + ".jams"
-        jams_path = os.path.join(JAMS_DIR, jams_file)
-        
+        jams_path = os.path.join(jams_dir, jams_file)
+
         if not os.path.exists(jams_path):
             print(f"No matching JAMS for: {fname}")
             continue
 
-        print("Loading JAMS:", jams_path)
-        # Parse label (string_labels shape => (n_frames, 6))
+        print("Processing JAMS:", jams_path)
         string_labels = parse_guitarset_jams(jams_path, sr, hop_length)
-
-        # Extract features => X_frames shape => (n_frames, 192, 9, 1)
         X_frames = extract_cqt_frames(wav_path, sr, hop_length)
-        n_frames = X_frames.shape[0]
 
-        # Align lengths (some files might not match exactly)
+        # Align lengths
+        n_frames = X_frames.shape[0]
         n_labels = string_labels.shape[0]
         min_len = min(n_frames, n_labels)
         X_frames = X_frames[:min_len]
         string_labels = string_labels[:min_len]
 
-        # Convert label to one-hot => shape (n_frames, 6, 21)
+        # Convert labels to one-hot encoding
         Y_frames = []
         for i in range(min_len):
-            row_6 = string_labels[i]  # e.g. [5, -1, 0, 3, ...]
+            row_6 = string_labels[i]
             row_oh = [fret_to_onehot(f) for f in row_6]
-            row_oh = np.array(row_oh, dtype=np.float32)  # shape (6, 21)
-            Y_frames.append(row_oh)
-        Y_frames = np.array(Y_frames, dtype=np.float32)  # shape (n_frames, 6, 21)
+            Y_frames.append(np.array(row_oh, dtype=np.float32))
 
-        # Accumulate into master lists
         all_X.append(X_frames)
-        all_Y.append(Y_frames)
+        all_Y.append(np.array(Y_frames, dtype=np.float32))
 
-    # Concatenate all data
-    X_all = np.concatenate(all_X, axis=0)  # shape (total_frames, 192, 9, 1)
-    Y_all = np.concatenate(all_Y, axis=0)  # shape (total_frames, 6, 21)
+    # Save processed data
+    X_all = np.concatenate(all_X, axis=0)
+    Y_all = np.concatenate(all_Y, axis=0)
 
-    print("Total frames collected:", X_all.shape[0])
+    with open(output_file, 'wb') as f:
+        pickle.dump((X_all, Y_all), f)
+    print(f"Data saved to {output_file}")
+
+def load_preprocessed_data(file_path):
+    """
+    Load preprocessed data from file.
+    """
+    with open(file_path, 'rb') as f:
+        X_all, Y_all = pickle.load(f)
+    return X_all, Y_all
+
+def main():
+    # Paths
+    WAV_DIR = "data/raw/wav"
+    JAMS_DIR = "data/raw/jams"
+    DATA_FILE = "preprocessed_data.pkl"
+    sr = 22050
+    hop_length = 512
+
+    # Preprocess data if not already saved
+    if not os.path.exists(DATA_FILE):
+        preprocess_and_save_data(WAV_DIR, JAMS_DIR, DATA_FILE, sr, hop_length)
+
+    # Load preprocessed data
+        
+    X_all, Y_all = load_preprocessed_data(DATA_FILE)
+    print(f"Number of samples in dataset: {X_all.shape[0]}")
+    print("Total frames loaded:", X_all.shape[0])
+    print(f"Input data shape: {X_all.shape}")
+    print(f"Labels shape: {Y_all.shape}")
 
     # === 80/10/10 Splits ===
-    # 1) First split off 10% test => 90% train+val
     X_trainval, X_test, Y_trainval, Y_test = train_test_split(
         X_all, Y_all, test_size=0.1
     )
-    # 2) From that 90%, split off 10% for validation => 80% train, 10% val
-    # 0.1 of 0.9 => 0.09 => ~10% overall
     X_train, X_val, Y_train, Y_val = train_test_split(
         X_trainval, Y_trainval, test_size=0.1111
     )
@@ -127,16 +137,25 @@ def main():
     model = build_cnn(
         input_shape=(192, 9, 1),
         num_strings=6,
-        num_frets=21  # 19 frets + open + muted => 21 classes
+        num_frets=21
     )
     model.summary()
 
-    # Train for fewer epochs if you want quick tests
+    # Add ModelCheckpoint to save model after every epoch
+    checkpoint_callback = ModelCheckpoint(
+        filepath="checkpoints/model_epoch_{epoch:02d}.keras",
+        save_best_only=False,
+        save_weights_only=False,
+        verbose=1
+    )
+
+    # Train the model
     history = model.fit(
         X_train, Y_train,
         validation_data=(X_val, Y_val),
-        epochs=16,
-        batch_size=32
+        epochs=100,
+        batch_size=16,
+        callbacks=[checkpoint_callback]
     )
 
     # Evaluate on VAL
@@ -147,9 +166,9 @@ def main():
     test_loss, test_acc = model.evaluate(X_test, Y_test, verbose=0)
     print(f"Test Accuracy: {test_acc:.4f}")
 
-    # Save model
+    # Save final model
     model.save("model.h5")
-    print("Model saved as tabcnn_model.h5")
+    print("Final model saved as model.h5")
 
 if __name__ == "__main__":
     main()
