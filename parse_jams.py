@@ -2,50 +2,45 @@
 """
 parse_jams.py
 -------------
+Same logic as your original TF code: loads .jams, returns shape (n_frames, 6)
+with frets in [-1..19], or -1 for muted.
 """
 
-import os
 import jams
 import numpy as np
+import os
 
-# For standard-tuning (E2..E4) in MIDI
-STRING_OPEN_MIDI = [40, 45, 50, 55, 59, 64]  # E2=40, A2=45, D3=50, G3=55, B3=59, E4=64
-MAX_FRET = 19  # Up to 19 frets (or 20 if you prefer)
+# Standard-tuning string MIDI notes
+STRING_OPEN_MIDI = [40, 45, 50, 55, 59, 64]  # E2..E4
+MAX_FRET = 19
 
 def parse_guitarset_jams(
     jams_path: str,
     sr: int = 22050,
     hop_length: int = 512
 ) -> np.ndarray:
-    """
-    Parse GuitarSet .jams file. Return a NumPy array of shape (n_frames, 6),
-    each entry an integer [0..19] or -1 for muted (no pitch).
-    """
     jam = jams.load(jams_path)
     duration_s = jam.file_metadata.duration
     n_frames = int(np.ceil(duration_s * sr / hop_length))
 
-    # Initialize: -1 means string is not sounding
+    # Initialize => -1 => means not sounding
     string_labels = -1 * np.ones((n_frames, 6), dtype=int)
 
-    # Find all pitch_contour annotations:
-    all_contours = jam.search(namespace="pitch_contour")
+    # Search pitch_contour in jam
     for ann in jam.annotations:
         if ann.namespace != "pitch_contour":
             continue
         ds = ann.annotation_metadata.data_source
         if ds is None:
-            # skip
             continue
         try:
             string_idx = int(ds)  # 0..5
         except:
-            # skip if not parseable
             continue
         if not (0 <= string_idx < 6):
             continue
 
-        # Parse the pitch/time from ann.data
+        # parse the obs
         for obs in ann.data:
             t_sec = obs.time
             freq = obs.value
@@ -55,35 +50,14 @@ def parse_guitarset_jams(
                 continue
 
             frame_idx = int(np.round(t_sec * sr / hop_length))
-            if not (0 <= frame_idx < n_frames):
+            if frame_idx < 0 or frame_idx >= n_frames:
                 continue
 
-            # Convert freq to MIDI
-            midi_val = 69 + 12 * np.log2(freq / 440.0)
+            # freq => MIDI => fret
+            midi_val = 69 + 12 * np.log2(freq/440.0)
             fret = int(round(midi_val)) - STRING_OPEN_MIDI[string_idx]
-
-            # If fret is out of range => -1 means unplayed
             if fret < 0 or fret > MAX_FRET:
                 fret = -1
-
-            # Store
-            # If multiple partial observations for same frame => keep the latest or ignore
             string_labels[frame_idx, string_idx] = fret
 
     return string_labels
-
-def parse_all_jams(
-    jams_dir: str,
-    sr: int = 22050,
-    hop_length: int = 512
-):
-    """
-    Parse all .jams files in a directory, returns a dict {filename: string_labels}.
-    """
-    result = {}
-    for fname in os.listdir(jams_dir):
-        if fname.endswith(".jams"):
-            jams_path = os.path.join(jams_dir, fname)
-            labels = parse_guitarset_jams(jams_path, sr, hop_length)
-            result[fname] = labels
-    return result
