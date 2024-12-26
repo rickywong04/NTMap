@@ -1,174 +1,154 @@
+**NTMap: Neural Tone Mapping and Processing**
 
-# NTMap: Neural Tone Mapping and Processing
+**Table of Contents**
 
- 
+- Overview
+- Features
+- Prerequisites
+- Installation
+- Usage
+  - Command-Line Arguments
+  - Example Usage
+- How It Works
+- Model Details
+- Output Files
+- Troubleshooting
+- Contributing
+- License
 
-NTMap is a machine learning project that utilizes Convolutional Neural Networks (CNNs) to classify acoustic guitar notes and generate corresponding guitar tablature. The dataset was taken from 'https://www.kaggle.com/datasets/mohammedalkooheji/guitar-notes-dataset/data', and it consists of pre-recorded audio samples of every note on a standard 6-string guitar.
+**Overview**
 
-  
+NTMap is a machine learning project that uses Convolutional Neural Networks (CNNs) to classify polyphonic acoustic guitar notes and generate corresponding guitar tablature. This project uses a neural network model, to analyze audio frames to predict fret positions on a guitar, generating both text-based tabs and MIDI representations of the performance. Additionally, it offers the option to split audio into separate stems to isolate a guitar track.
 
-## Features (Note: This is still a work in progress!)
+## Dataset Information (GuitarSet)
 
--  **Note Classification:** Identify notes up to the from E2 to E6 (range of a 24-fret guitar).
+GuitarSet was used to train this model to detect multiple notes across the fretboard. This dataset came with 360 excerpts of acoustic guitar audio recorded with a hexaphonic pickup that records the input audio per string. 
 
--  **Guitar Tablature Generation:** Convert predicted notes into guitar string and fret positions.
+More information can be found here (https://zenodo.org/records/3371780)
 
--  **CNN Architecture:** Uses to process Mel-spectrograms of the audio.
 
-  
+**Features**
 
----
+- **ASCII Tablature Generation:** Converts guitar audio into guitar tabs.
+- **Audio Splitting:** Convert audio into separate stems (i.e. guitar, bass, keys, etc.) 
+- **MIDI File Creation:** Generates MIDI files from fret predictions
+- **Frame-by-Frame:** Uses the model's predictions to capture all frame-by-frame fret changes.
 
-  
+**Prerequisites**
 
-## How It Works
+Before setting up the project, ensure you have the following installed:
 
-  
+- **Python 3.7 or higher**
+- **Pip** (Python package installer)
 
-### 1. Preprocessing the Dataset
+**Python Libraries**
 
-The `preprocess.py` script converts raw audio data into normalized Mel-spectrograms:
+Install the required Python libraries using pip:
 
--  **Input:**  `.wav` audio files (2 seconds, 44.1 kHz, mono).
+```pip install torch torchaudio audio-separator[cpu] librosa soundfile numpy matplotlib mido scipy ```
 
--  **Output:**  `processed_data.npz`, a compressed file containing:
+Alternatively, you can also install ```pip install audio-separator[gpu]``` if your device is compatabile. More information about that can be found here: https://github.com/nomadkaraoke/python-audio-separator
 
--  `X`: Mel-spectrograms as 2D image-like arrays.
+**Installation**
 
--  `y`: Corresponding note labels.
+**Clone the Repository:**
 
--  `classes`: All unique note classes in the dataset.
+``` git clone https://github.com/rickywong04/Neural-Tone-Mapping-and-Processing.git ```
 
-  
+**Usage**
 
-### 2. Training the CNN
+```generate_tabs.py``` processes a guitar audio file to generate ASCII tabs and MIDI files.
 
-The `train_model.py` script trains a CNN to classify notes:
+**Command-Line Arguments**
 
--  **Input:**  `processed_data.npz`.
+- --input *(required)*: Path to the input guitar audio file (e.g., my\_guitar.wav).
+- --model\_pt *(optional)*: Path to the trained PyTorch model file (default: final\_model.pt).
+- --tab\_txt *(optional)*: Path to save the generated ASCII tablature (e.g., output\_tab.txt). If not provided, the tab will be printed to the console.
+- --midi\_out *(optional)*: Path to save the generated MIDI file (e.g., detected\_notes.mid). If not provided, no MIDI file will be created.
+- --soundfont *(optional)*: Path to a .sf2 SoundFont file for rendering MIDI to audio (e.g., my\_soundfont.sf2). Required if --audio\_out is specified.
+- --audio\_out *(optional)*: Path to save the rendered audio file from the MIDI (e.g., rendered\_from\_midi.wav). Requires both --midi\_out and --soundfont.
+- --chunk\_size *(optional)*: Number of fret changes before inserting a bar | in the ASCII tab for readability (default: 16).
 
--  **Model:** A CNN with 3 convolutional layers and fully connected layers.
+**Example Usage**
 
--  **Output:**
+**Generating ASCII Tab Only:** 
 
--  `saved_model.h5`: The trained model.
 
--  `label_classes.npy`: Encoded label classes.
 
-  
-
-### 3. Generating Guitar Tabs
-
-The `generate_tabs.py` script predicts guitar notes and converts them into tablature:
-
--  **Input:** A file of a guitar note.
-
--  **Process:**
-
-1. Extract the Mel-spectrogram of the input file.
-
-2. Pass the spectrogram to the trained CNN for prediction.
-
-3. Map the predicted note to its corresponding string and fret position using a predefined dictionary.
-
--  **Output:** The predicted note and tablature position.
-
-  
-
----
-
-  
-
-## Dataset Information (https://www.kaggle.com/datasets/mohammedalkooheji/guitar-notes-dataset/data)
-
- **Notes:** Ranges from E2 (73.42 Hz) to G#5 (830.61 Hz).
-
- **Variations:**
-
--  **String Types:** Steel (`s`), Nylon (`n`).
-
--  **Plucking Styles:** Pick (`p`), Finger (`f`), Nail (`n`).
-
--  **Dynamics:** Normal (`n`), Loud (`l`), Muted (`m`).
-
- **Total Samples:** ~1500 recordings.
-
-  
-
----
-
-  
-
-## How to Run
-
-  
-
-### 1. Preprocess the Dataset
-
-```python preprocess.py```
-
-  
-
-Ensure the raw dataset is located at data/raw/Guitar Dataset. Feel free to add any
-
-  
-
-2. Train the Model
-
-
-```python train_model.py```
-
-This will save the model and labels in the models directory.
-
-  
-
-3. Generate Tabs
-
-To predict a note and generate its guitar tab:
-
-  
-
-```python generate_tabs.py <audio_file.wav>```
-
-  
-
-Example Output:
-
-```
-Predicted Note: A#3 (B♭3)
-
-Possible Tabs:
-
-- String 5, Fret 13
-
-- String 4, Fret 8
-
-- String 3, Fret 3
+```bash
+python generate_tabs.py 
+--input "my_guitar.wav" --model_pt "final_model.pt" --tab_txt "output_tab.txt" --chunk_size 16
 ```
 
-  
-  
+*If --tab\_txt is not provided, the ASCII tab will be displayed in the console.*
 
-# Requirements:
+**Generating ASCII Tab and MIDI File:** 
 
-Python 3.8+
+```bash
+python generate_tabs.py 
+--input "my_guitar.wav" --model_pt "final_model.pt" --tab_txt "output_tab.txt" 
+--midi_out "detected_notes.mid" \ --chunk_size 16
+```
 
-TensorFlow
+**Generating ASCII Tab, MIDI File, and Rendering Audio:** 
 
-NumPy
 
-librosa
+```bash
+python generate_tabs.py 
+--input "my_guitar.wav" --model_pt "final_model.pt" --tab_txt "output_tab.txt" 
+--midi_out "detected_notes.mid" --soundfont "my_soundfont.sf2"  --chunk_size 16
+```
+**Audio Splitting**
+```split_audio.py```
+The split_audio.py script uses audio-separator to separate an audio file into different stems. If the input audio file already appears to be a guitar track based on its filename, the script skips the separation process.
 
-scikit-learn
+**Usage**
+To use the script, run the following command:
 
-Install dependencies with:
 
-  
+```bash
+python split_audio.py --input_audio "mySong.mp3" --output_dir "out" --model_filename "htdemucs_6s.yaml"
+```
+Command-Line Arguments
+--input_audio (required): Path to the input audio file (e.g., mySong.mp3).
+--output_dir (optional): Directory where the separated stems will be saved (default: separated_out).
+--model_filename (optional): Filename of the audio-separator model to use (default: htdemucs_6s.yaml).
 
-```pip install -r requirements.txt```
+**How It Works**
 
-  
+1. **Audio Processing:**
+- The script loads the input guitar audio file using librosa.
+- It computes the Constant-Q Transform (CQT) of the audio to extract frequency-domain features.
+- Frames are extracted with a specified context size to capture temporal information.
+2. **Fret Prediction:**
+- The processed frames are fed into a pre-trained neural network model built with PyTorch.
+- The model predicts fret positions for each of the six guitar strings across all frames.
+- Each frame's fret predictions are mapped to their corresponding guitar strings.
+
+
+
+
+**Exmaple ASCII Tablature (output\_tab.txt):**
+
+A text file containing the generated guitar tablature in ASCII format. 
+
+
+```
+===== ASCII TAB =====
+e|0-0-2-2-3-3-2-0-|
+B|1-1-3-3-4-4-3-1-|
+G|0-0-2-2-4-4-2-0-|
+D|2-2-4-4-5-5-4-2-|
+A|3-3-5-5-7-7-5-3-|
+E|X-X-0-0-0-0-0-X-|
+=====================
+```
+
+**Contributing**
+
+Contributions are welcome! If you have suggestions, bug reports, or improvements, feel free to open an issue or submit a pull request.
+
 
 ## Acknowledgements
 
-This is a proof of concept so far! This currently has support for single note at a time, but we plan to add implementation for longer audio, detecing multiple notes over time, at tempo, and for multiple notes at a time for chords!
+This is a proof of concept so far! This currently stil is not completely accurate and will get thrown off by random noise. However, I plan to keep improving and add more implementation to this project.
