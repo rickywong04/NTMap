@@ -1,26 +1,10 @@
 **NTMap: Neural Tone Mapping and Processing**
 
-**Table of Contents**
-
-- Overview
-- Features
-- Prerequisites
-- Installation
-- Usage
-  - Command-Line Arguments
-  - Example Usage
-- How It Works
-- Model Details
-- Output Files
-- Troubleshooting
-- Contributing
-- License
-
 **Overview**
 
 NTMap is a machine learning project that uses Convolutional Neural Networks (CNNs) to classify polyphonic acoustic guitar notes and generate corresponding guitar tablature. This project uses a neural network model, to analyze audio frames to predict fret positions on a guitar, generating both text-based tabs and MIDI representations of the performance. Additionally, it offers the option to split audio into separate stems to isolate a guitar track.
 
-## Dataset Information (GuitarSet)
+**Dataset Information (GuitarSet)**
 
 GuitarSet was used to train this model to detect multiple notes across the fretboard. This dataset came with 360 excerpts of acoustic guitar audio recorded with a hexaphonic pickup that records the input audio per string. 
 
@@ -143,6 +127,9 @@ A|3-3-5-5-7-7-5-3-|
 E|X-X-0-0-0-0-0-X-|
 =====================
 ```
+
+**Training**
+If you want to train your own model, please download the GuitarSet ```audio_hex-pickup_debleeded.zip``` along with ```annotations.zip```. The audio files should be placed in ```data/raw/wav``` and the annotations (*.jams files) should be placed in ```data/raw/jams```. 
 
 **Contributing**
 
