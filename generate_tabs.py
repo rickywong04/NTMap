@@ -11,7 +11,7 @@ Generates:
 
 Usage Example:
   python generate_tabs.py \
-      --guitar_wav "my_guitar.wav" \
+      --input "my_guitar.wav" \
       --model_pt "final_model.pt" \
       --tab_txt "output_tab.txt" \
       --midi_out "detected_notes.mid" \
@@ -298,7 +298,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generate ASCII tabs & optional MIDI from a guitar audio file."
     )
-    parser.add_argument("--guitar_wav", required=True, help="Path to the guitar track audio file.")
+    parser.add_argument("--input", required=True, help="Path to the guitar track audio file.")
     parser.add_argument("--model_pt", default="final_model.pt", help="Path to the .pt model.")
     parser.add_argument("--tab_txt", default=None, help="Path to output ASCII tab.")
     parser.add_argument("--midi_out", default=None, help="Path to output MIDI file. If not given, no MIDI is saved.")
@@ -316,8 +316,8 @@ def main():
     model = load_tab_model(args.model_pt, device=device)
 
     # Extract frames
-    logging.info(f"Extracting CQT frames from {args.guitar_wav}")
-    X = extract_cqt_frames_simple(args.guitar_wav)
+    logging.info(f"Extracting CQT frames from {args.input}")
+    X = extract_cqt_frames_simple(args.input)
     X_torch = torch.from_numpy(X).float().to(device)
 
     # Predict fret positions
