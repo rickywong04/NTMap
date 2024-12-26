@@ -1,17 +1,17 @@
-**NTMap: Neural Tone Mapping and Processing**
+## NTMap: Neural Tone Mapping and Processing ##
 
-**Overview**
+### Overview ###
 
 NTMap is a machine learning project that uses Convolutional Neural Networks (CNNs) to classify polyphonic acoustic guitar notes and generate corresponding guitar tablature. This project uses a neural network model, to analyze audio frames to predict fret positions on a guitar, generating both text-based tabs and MIDI representations of the performance. Additionally, it offers the option to split audio into separate stems to isolate a guitar track.
 
-**Dataset Information (GuitarSet)**
+### Dataset Information (GuitarSet) ###
 
 GuitarSet was used to train this model to detect multiple notes across the fretboard. This dataset came with 360 excerpts of acoustic guitar audio recorded with a hexaphonic pickup that records the input audio per string. 
 
 More information can be found here (https://zenodo.org/records/3371780)
 
 
-**Features**
+## Features ##
 
 - **ASCII Tablature Generation:** Converts guitar audio into guitar tabs.
 - **Audio Splitting:** Convert audio into separate stems (i.e. guitar, bass, keys, etc.) 
@@ -33,15 +33,15 @@ Install the required Python libraries using pip:
 
 Alternatively, you can also install ```pip install audio-separator[gpu]``` if your device is compatabile. More information about that can be found here: https://github.com/nomadkaraoke/python-audio-separator
 
-**Installation**
+### Installation ###
 
 **Clone the Repository:**
 
 ``` git clone https://github.com/rickywong04/Neural-Tone-Mapping-and-Processing.git ```
 
-**Usage**
+### How To Use ###
 
-```generate_tabs.py``` processes a guitar audio file to generate ASCII tabs and MIDI files.
+```generate_tabs.py``` processes the guitar audio file to generate ASCII tabs and MIDI files.
 
 **Command-Line Arguments**
 
@@ -82,7 +82,7 @@ python generate_tabs.py
 --input "my_guitar.wav" --model_pt "final_model.pt" --tab_txt "output_tab.txt" 
 --midi_out "detected_notes.mid" --soundfont "my_soundfont.sf2"  --chunk_size 16
 ```
-**Audio Splitting**
+### Audio Splitting ###
 ```split_audio.py```
 The split_audio.py script uses audio-separator to separate an audio file into different stems. If the input audio file already appears to be a guitar track based on its filename, the script skips the separation process.
 
@@ -98,7 +98,7 @@ Command-Line Arguments
 --output_dir (optional): Directory where the separated stems will be saved (default: separated_out).
 --model_filename (optional): Filename of the audio-separator model to use (default: htdemucs_6s.yaml).
 
-**How It Works**
+### How It Works ###
 
 1. **Audio Processing:**
 - The script loads the input guitar audio file using librosa.
@@ -112,7 +112,7 @@ Command-Line Arguments
 
 
 
-**Exmaple ASCII Tablature (output\_tab.txt):**
+### Exmaple ASCII Tablature (output\_tab.txt): ###
 
 A text file containing the generated guitar tablature in ASCII format. 
 
@@ -128,10 +128,11 @@ E|X-X-0-0-0-0-0-X-|
 =====================
 ```
 
-**Training**
+### Training ###
 If you want to train your own model, please download the GuitarSet ```audio_hex-pickup_debleeded.zip``` along with ```annotations.zip```. The audio files should be placed in ```data/raw/wav``` and the annotations (*.jams files) should be placed in ```data/raw/jams```. 
 
-**Contributing**
+
+### Contributing ###
 
 Contributions are welcome! If you have suggestions, bug reports, or improvements, feel free to open an issue or submit a pull request.
 
