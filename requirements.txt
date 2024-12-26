@@ -1,6 +1,10 @@
 librosa
 jams
-tensorflow
+torch
 pandas
 numpy
 matplotlib
+audio-separator[cpu]
+librosa
+soundfile
+scipy
